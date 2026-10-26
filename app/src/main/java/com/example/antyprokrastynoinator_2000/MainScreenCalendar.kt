@@ -20,7 +20,7 @@ import java.util.Locale
 
 @Composable
 fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit) {
-    val startHour = 6
+    val startHour = 0
     val hourHeight = 60.dp
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -110,7 +110,7 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit) {
             item {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Column {
-                        for (hour in startHour..24) {
+                        for (hour in startHour..23) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
