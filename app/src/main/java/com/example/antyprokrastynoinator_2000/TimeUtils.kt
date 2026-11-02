@@ -1,15 +1,25 @@
 package com.example.antyprokrastynoinator_2000
 
-fun extractHour(dataTekst: String): Int {
-    return try {
-        val time = dataTekst.split(" ").getOrNull(1) ?: return 0
-        time.split(":")[0].toInt()
-    } catch (e: Exception) { 0 }
-}
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
-fun extractMinute(dataTekst: String): Int {
-    return try {
-        val time = dataTekst.split(" ").getOrNull(1) ?: return 0
-        time.split(":")[1].toInt()
-    } catch (e: Exception) { 0 }
+val TaskDateTimeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+
+fun LocalDateTime.formatForTask(): String = format(TaskDateTimeFormat)
+
+private const val MINUTES_IN_DAY = 24 * 60
+
+fun Task.startMinuteOn(day: LocalDate): Int =
+    if (start.toLocalDate().isBefore(day)) 0
+    else start.hour * 60 + start.minute
+
+fun Task.endMinuteOn(day: LocalDate): Int =
+    if (end.toLocalDate().isAfter(day)) MINUTES_IN_DAY
+    else end.hour * 60 + end.minute
+
+fun Task.occursOn(day: LocalDate): Boolean {
+    val dayStart = day.atStartOfDay()
+    val dayEnd = day.plusDays(1).atStartOfDay()
+    return start.isBefore(dayEnd) && end.isAfter(dayStart)
 }

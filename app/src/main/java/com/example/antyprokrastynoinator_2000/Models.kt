@@ -1,14 +1,15 @@
 package com.example.antyprokrastynoinator_2000
 
 import androidx.compose.ui.graphics.Color
+import java.time.LocalDateTime
 
 data class Task(
     val id: Int,
     val taskName: String,
     val description: String,
     val miniTasks: List<MiniTask>,
-    val start: String,
-    val end: String,
+    val start: LocalDateTime,
+    val end: LocalDateTime,
     val priority: Priority
 )
 

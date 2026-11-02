@@ -4,8 +4,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -14,14 +21,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit) {
     val startHour = 0
     val hourHeight = 60.dp
+
+    var currentDate by remember { mutableStateOf(LocalDate.now()) }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Box(
@@ -37,30 +45,59 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(16.dp))
 
+        fun updateCurrentDate(inPlus: Boolean)
+        {
+            currentDate = if(inPlus) {
+                currentDate.plusDays(1);
+            } else{
+                currentDate.minusDays(1);
+            }
+        }
+
+        WeekSelector(
+            selectedDate = currentDate,
+            onDateSelected = { currentDate = it }
+        )
+
         Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF008575))) {
+            IconButton(onClick = { updateCurrentDate(false) }){
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    tint = Color.White,
+                    contentDescription = "Poprzedni dzień"
+                )
+            }
+
             Text(
                 text = "Godziny",
                 color = Color.White,
-                modifier = Modifier.weight(1f).padding(8.dp),
+                modifier = Modifier.weight(1f).padding(6.dp),
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold
             )
 
-            val dateFormat = SimpleDateFormat("dd.MM.yyyy", Locale.getDefault())
-            val todayDate = dateFormat.format(Date())
+            val dateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
             Text(
-                text = todayDate,
+                text = currentDate.format(dateFormat),
                 color = Color.White,
                 modifier = Modifier.weight(3f).padding(8.dp),
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold
             )
+
+            IconButton(onClick = { updateCurrentDate(true) }){
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    tint = Color.White,
+                    contentDescription = "Następny dzień"
+                )
+            }
         }
 
-        val sortedTasks = taskList.map { task ->
-            val startMin = ((extractHour(task.start) - startHour) * 60) + extractMinute(task.start)
-            val duration = ((extractHour(task.end) - extractHour(task.start)) * 60) + (extractMinute(task.end) - extractMinute(task.start))
+        val sortedTasks = taskList.filter { it.occursOn(currentDate) }.map { task ->
+            val startMin = task.startMinuteOn(currentDate) - startHour * 60
+            val duration = task.endMinuteOn(currentDate) - task.startMinuteOn(currentDate)
             PlacedTask(task, startMin, duration)
         }.sortedWith(compareBy({ it.startMin }, { -(it.startMin + it.durationMin) }))
 

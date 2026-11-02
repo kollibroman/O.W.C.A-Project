@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.antyprokrastynoinator_2000"
-        minSdk = 24
+        minSdk = 28
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"

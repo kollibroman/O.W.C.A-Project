@@ -19,15 +19,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.util.Calendar
+import java.time.LocalDateTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(onTaskAdded: (Task) -> Unit, onBackClick: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var startDate by remember { mutableStateOf("Wybierz datę rozpoczęcia") }
-    var endDate by remember { mutableStateOf("Wybierz datę zakończenia") }
+    var startDate by remember { mutableStateOf<LocalDateTime?>(null) }
+    var endDate by remember { mutableStateOf<LocalDateTime?>(null) }
 
     val priorityOptions = listOf(
         Priority(id = 1, name = "bardzo ważne", color = Color(0xFF1B4D3E)),
@@ -38,31 +38,24 @@ fun AddTaskScreen(onTaskAdded: (Task) -> Unit, onBackClick: () -> Unit) {
     var selectedPriority by remember { mutableStateOf(priorityOptions[1]) }
 
     val context = LocalContext.current
-    val calendar = Calendar.getInstance()
     val fieldColor = Color(0xFF008575)
 
     BackHandler {
         onBackClick()
     }
 
-    fun selectDateTime(onSelected: (String) -> Unit) {
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH)
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
+    fun selectDateTime(initial: LocalDateTime?, onSelected: (LocalDateTime) -> Unit) {
+        val base = initial ?: LocalDateTime.now()
 
         val dateDialog = DatePickerDialog(context, android.R.style.Theme_Material_Light_Dialog_Alert, { _, y, m, d ->
-            val hour = calendar.get(Calendar.HOUR_OF_DAY)
-            val minute = calendar.get(Calendar.MINUTE)
-
             val timeDialog = TimePickerDialog(context, android.R.style.Theme_Material_Light_Dialog_Alert, { _, h, min ->
-                val result = String.format("%02d.%02d.%d %02d:%02d", d, m + 1, y, h, min)
-                onSelected(result)
-            }, hour, minute, true)
+                onSelected(LocalDateTime.of(y, m + 1, d, h, min))
+            }, base.hour, base.minute, true)
 
             timeDialog.window?.setGravity(Gravity.CENTER)
             timeDialog.show()
 
-        }, year, month, day)
+        }, base.year, base.monthValue - 1, base.dayOfMonth)
 
         dateDialog.window?.setGravity(Gravity.CENTER)
         dateDialog.show()
@@ -124,21 +117,37 @@ fun AddTaskScreen(onTaskAdded: (Task) -> Unit, onBackClick: () -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Button(
-                onClick = { selectDateTime { startDate = it } },
+                onClick = {
+                    selectDateTime(startDate) { newStart ->
+                        startDate = newStart
+                        val currentEnd = endDate
+                        if (currentEnd == null || !currentEnd.isAfter(newStart)) {
+                            endDate = newStart.plusHours(1)
+                        }
+                    }
+                },
                 modifier = Modifier.weight(1f).height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = fieldColor),
                 shape = MaterialTheme.shapes.extraSmall
             ) {
-                Text(text = startDate, color = Color.White, fontSize = 12.sp)
+                Text(
+                    text = startDate?.formatForTask() ?: "Wybierz datę rozpoczęcia",
+                    color = Color.White,
+                    fontSize = 12.sp
+                )
             }
 
             Button(
-                onClick = { selectDateTime { endDate = it } },
+                onClick = { selectDateTime(endDate ?: startDate) { endDate = it } },
                 modifier = Modifier.weight(1f).height(56.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = fieldColor),
                 shape = MaterialTheme.shapes.extraSmall
             ) {
-                Text(text = endDate, color = Color.White, fontSize = 12.sp)
+                Text(
+                    text = endDate?.formatForTask() ?: "Wybierz datę zakończenia",
+                    color = Color.White,
+                    fontSize = 12.sp
+                )
             }
         }
 
@@ -182,12 +191,17 @@ fun AddTaskScreen(onTaskAdded: (Task) -> Unit, onBackClick: () -> Unit) {
         ) {
             Button(
                 onClick = {
+                    val start = startDate
+                    val end = endDate
                     when {
                         name.isBlank() -> {
                             Toast.makeText(context, "Uzupełnij nazwę zadania!", Toast.LENGTH_SHORT).show()
                         }
-                        startDate == "Wybierz datę rozpoczęcia" || endDate == "Wybierz datę zakończenia" -> {
+                        start == null || end == null -> {
                             Toast.makeText(context, "Wybierz przedział czasowy!", Toast.LENGTH_SHORT).show()
+                        }
+                        !end.isAfter(start) -> {
+                            Toast.makeText(context, "Data zakończenia musi być późniejsza niż data rozpoczęcia!", Toast.LENGTH_SHORT).show()
                         }
                         else -> {
                             val newTask = Task(
@@ -195,8 +209,8 @@ fun AddTaskScreen(onTaskAdded: (Task) -> Unit, onBackClick: () -> Unit) {
                                 taskName = name,
                                 description = description,
                                 miniTasks = emptyList(),
-                                start = startDate,
-                                end = endDate,
+                                start = start,
+                                end = end,
                                 priority = selectedPriority,
                             )
                             onTaskAdded(newTask)
