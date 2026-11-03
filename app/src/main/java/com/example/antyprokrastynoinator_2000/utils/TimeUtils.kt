@@ -1,5 +1,6 @@
-package com.example.antyprokrastynoinator_2000
+package com.example.antyprokrastynoinator_2000.utils
 
+import com.example.antyprokrastynoinator_2000.model.Task
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter

@@ -1,4 +1,4 @@
-package com.example.antyprokrastynoinator_2000
+package com.example.antyprokrastynoinator_2000.ui.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border

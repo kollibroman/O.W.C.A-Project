@@ -1,7 +1,8 @@
-package com.example.antyprokrastynoinator_2000
+package com.example.antyprokrastynoinator_2000.ui.calendar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -19,13 +20,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.antyprokrastynoinator_2000.model.PlacedTask
+import com.example.antyprokrastynoinator_2000.model.Task
+import com.example.antyprokrastynoinator_2000.utils.endMinuteOn
+import com.example.antyprokrastynoinator_2000.utils.occursOn
+import com.example.antyprokrastynoinator_2000.utils.startMinuteOn
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit) {
+fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick: (Task) -> Unit) {
     val startHour = 0
     val hourHeight = 60.dp
 
@@ -71,9 +78,10 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit) {
             Text(
                 text = "Godziny",
                 color = Color.White,
-                modifier = Modifier.weight(1f).padding(6.dp),
+                modifier = Modifier.weight(1f).padding(5.dp),
                 textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontSize = TextUnit.Unspecified
             )
 
             val dateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy")
@@ -191,7 +199,8 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit) {
                                             .width(blockWidth)
                                             .offset(x = offsetX, y = pt.startMin.dp)
                                             .height(pt.durationMin.dp)
-                                            .padding(end = 4.dp, start = 2.dp),
+                                            .padding(end = 4.dp, start = 2.dp)
+                                            .clickable { onTaskClick(pt.task) },
                                         colors = CardDefaults.cardColors(containerColor = pt.task.priority.color)
                                     ) {
                                         Column(modifier = Modifier.padding(6.dp)) {
