@@ -159,7 +159,6 @@ private fun WeekDaysRow(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WeekPickerDialog(
     initialDate: LocalDate,

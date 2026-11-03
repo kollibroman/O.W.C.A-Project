@@ -14,9 +14,15 @@ class CalendarViewModel : ViewModel() {
     // Sprawdza, czy zadanie koliduje z innymi zadaniami.
     private fun hasCollision(task: Task): Boolean {
         return _taskList.value.any { existingTask ->
-            existingTask.id != task.id &&
-                    task.start.isBefore(existingTask.end) &&
-                    existingTask.start.isBefore(task.end)
+            val overlaps =
+                task.id != existingTask.id &&
+                        task.start.isBefore(existingTask.end) &&
+                        existingTask.start.isBefore(task.end)
+
+            val existingPriority = existingTask.priority.id
+            val newPriority = task.priority.id
+
+            overlaps && newPriority >= existingPriority
         }
     }
 
@@ -26,7 +32,7 @@ class CalendarViewModel : ViewModel() {
             return false
         }
 
-        _taskList.value = _taskList.value + newTask
+        _taskList.value += newTask
         return true
     }
 

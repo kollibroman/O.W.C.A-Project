@@ -1,5 +1,7 @@
 package com.example.antyprokrastynoinator_2000.ui.tasks
 
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.IconButton
 import android.R
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
@@ -23,7 +25,10 @@ import com.example.antyprokrastynoinator_2000.model.Priority
 import com.example.antyprokrastynoinator_2000.model.Task
 import com.example.antyprokrastynoinator_2000.utils.formatForTask
 import java.time.LocalDateTime
+import androidx.compose.runtime.mutableStateListOf
 
+import androidx.compose.ui.text.font.FontWeight
+import com.example.antyprokrastynoinator_2000.model.MiniTask
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
@@ -45,6 +50,12 @@ fun AddTaskScreen(
 
     var endDate by remember(initialTask) {
         mutableStateOf(initialTask?.end)
+    }
+
+    val miniTasks = remember(initialTask) {
+        mutableStateListOf<MiniTask>().apply {
+            addAll(initialTask?.miniTasks ?: emptyList())
+        }
     }
 
     val priorityOptions = listOf(
@@ -158,6 +169,56 @@ fun AddTaskScreen(
                 focusedContainerColor = fieldColor
             )
         )
+
+        Text(
+            text = "Minitaski",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
+
+        miniTasks.forEachIndexed { index, miniTask ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedTextField(
+                    value = miniTask.name,
+                    onValueChange = { newName ->
+                        miniTasks[index] = miniTask.copy(name = newName)
+                    },
+                    label = { Text("Minitask ${index + 1}") },
+                    modifier = Modifier.weight(1f),
+                    singleLine = true
+                )
+
+                IconButton(
+                    onClick = {
+                        miniTasks.removeAt(index)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Usuń minitask",
+                        tint = Color.Red
+                    )
+                }
+            }
+        }
+
+        Button(
+            onClick = {
+                val nextId = (miniTasks.maxOfOrNull { it.id } ?: 0) + 1
+                miniTasks.add(
+                    MiniTask(
+                        id = nextId,
+                        name = ""
+                    )
+                )
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Dodaj minitask ${miniTasks.size + 1}")
+        }
 
         Row(
             modifier = Modifier
@@ -293,7 +354,7 @@ fun AddTaskScreen(
                                     ?: System.currentTimeMillis().toInt(),
                                 taskName = name,
                                 description = description,
-                                miniTasks = initialTask?.miniTasks ?: emptyList(),
+                                miniTasks = miniTasks.toList(),
                                 start = start,
                                 end = end,
                                 priority = selectedPriority
