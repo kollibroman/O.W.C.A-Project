@@ -1,8 +1,5 @@
 package com.example.antyprokrastynoinator_2000.ui.tasks
 
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.IconButton
-import android.R
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.view.Gravity
@@ -13,71 +10,63 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.antyprokrastynoinator_2000.model.MiniTask
 import com.example.antyprokrastynoinator_2000.model.Priority
 import com.example.antyprokrastynoinator_2000.model.Task
 import com.example.antyprokrastynoinator_2000.utils.formatForTask
 import java.time.LocalDateTime
-import androidx.compose.runtime.mutableStateListOf
 
-import androidx.compose.ui.text.font.FontWeight
-import com.example.antyprokrastynoinator_2000.model.MiniTask
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskScreen(
-    initialTask: Task? = null,
-    onTaskSaved: (Task) -> Unit,
-    onBackClick: () -> Unit
+    priorities: List<Priority>,
+    taskToEdit: Task? = null,
+    onDismissRequest: () -> Unit,
+    onSaveTask: (Task) -> Unit
 ) {
-    var name by remember(initialTask) {
-        mutableStateOf(initialTask?.taskName ?: "")
+    var name by remember(taskToEdit) {
+        mutableStateOf(taskToEdit?.taskName ?: "")
     }
 
-    var description by remember(initialTask) {
-        mutableStateOf(initialTask?.description ?: "")
+    var description by remember(taskToEdit) {
+        mutableStateOf(taskToEdit?.description ?: "")
     }
 
-    var startDate by remember(initialTask) {
-        mutableStateOf(initialTask?.start)
+    var startDate by remember(taskToEdit) {
+        mutableStateOf(taskToEdit?.start)
     }
 
-    var endDate by remember(initialTask) {
-        mutableStateOf(initialTask?.end)
+    var endDate by remember(taskToEdit) {
+        mutableStateOf(taskToEdit?.end)
     }
 
-    val miniTasks = remember(initialTask) {
+    val miniTasks = remember(taskToEdit) {
         mutableStateListOf<MiniTask>().apply {
-            addAll(initialTask?.miniTasks ?: emptyList())
+            addAll(taskToEdit?.miniTasks ?: emptyList())
         }
     }
 
-    val priorityOptions = listOf(
-        Priority(id = 1, name = "bardzo ważne", color = Color(0xFF1B4D3E)),
-        Priority(id = 2, name = "ważne", color = Color(0xFF008575)),
-        Priority(id = 3, name = "mało ważne", color = Color(0xFF26A69A))
-    )
-
     var isDropdownExpanded by remember { mutableStateOf(false) }
 
-    var selectedPriority by remember(initialTask) {
-        mutableStateOf(
-            priorityOptions.find { it.id == initialTask?.priority?.id }
-                ?: priorityOptions[1]
-        )
+    var selectedPriority by remember(taskToEdit, priorities) {
+        mutableStateOf(taskToEdit?.priority ?: priorities.firstOrNull())
     }
 
     val context = LocalContext.current
     val fieldColor = Color(0xFF008575)
 
     BackHandler {
-        onBackClick()
+        onDismissRequest()
     }
 
     fun selectDateTime(
@@ -88,11 +77,11 @@ fun AddTaskScreen(
 
         val dateDialog = DatePickerDialog(
             context,
-            R.style.Theme_Material_Light_Dialog_Alert,
+            android.R.style.Theme_Material_Light_Dialog_Alert,
             { _, year, month, day ->
                 val timeDialog = TimePickerDialog(
                     context,
-                    R.style.Theme_Material_Light_Dialog_Alert,
+                    android.R.style.Theme_Material_Light_Dialog_Alert,
                     { _, hour, minute ->
                         onSelected(
                             LocalDateTime.of(year, month + 1, day, hour, minute)
@@ -129,12 +118,12 @@ fun AddTaskScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = if (initialTask == null) "Dodaj zadanie" else "Edytuj zadanie",
+                text = if (taskToEdit == null) "Dodaj zadanie" else "Edytuj zadanie",
                 fontSize = 28.sp,
                 color = Color(0xFF008575)
             )
 
-            IconButton(onClick = onBackClick) {
+            IconButton(onClick = onDismissRequest) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Zamknij",
@@ -211,7 +200,8 @@ fun AddTaskScreen(
                 miniTasks.add(
                     MiniTask(
                         id = nextId,
-                        name = ""
+                        name = "",
+                        done = false
                     )
                 )
             },
@@ -278,7 +268,7 @@ fun AddTaskScreen(
             modifier = Modifier.padding(bottom = 32.dp)
         ) {
             TextField(
-                value = selectedPriority.name,
+                value = selectedPriority?.name ?: "Brak priorytetu",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Priorytet") },
@@ -302,7 +292,7 @@ fun AddTaskScreen(
                     isDropdownExpanded = false
                 }
             ) {
-                priorityOptions.forEach { option ->
+                priorities.forEach { option ->
                     DropdownMenuItem(
                         text = { Text(option.name) },
                         onClick = {
@@ -325,42 +315,30 @@ fun AddTaskScreen(
 
                     when {
                         name.isBlank() -> {
-                            Toast.makeText(
-                                context,
-                                "Uzupełnij nazwę zadania!",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(context, "Uzupełnij nazwę zadania!", Toast.LENGTH_SHORT).show()
                         }
-
                         start == null || end == null -> {
-                            Toast.makeText(
-                                context,
-                                "Wybierz przedział czasowy!",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(context, "Wybierz przedział czasowy!", Toast.LENGTH_SHORT).show()
                         }
-
                         !end.isAfter(start) -> {
-                            Toast.makeText(
-                                context,
-                                "Data zakończenia musi być późniejsza niż data rozpoczęcia!",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                            Toast.makeText(context, "Data zakończenia musi być późniejsza niż data rozpoczęcia!", Toast.LENGTH_SHORT).show()
                         }
-
+                        selectedPriority == null -> {
+                            Toast.makeText(context, "Brak dostępnych priorytetów w bazie!", Toast.LENGTH_SHORT).show()
+                        }
                         else -> {
                             val savedTask = Task(
-                                id = initialTask?.id
-                                    ?: System.currentTimeMillis().toInt(),
+                                id = taskToEdit?.id ?: System.currentTimeMillis().toInt(),
                                 taskName = name,
                                 description = description,
                                 miniTasks = miniTasks.toList(),
                                 start = start,
                                 end = end,
-                                priority = selectedPriority
+                                priority = selectedPriority!!,
+                                isDone = taskToEdit?.isDone ?: false
                             )
 
-                            onTaskSaved(savedTask)
+                            onSaveTask(savedTask)
                         }
                     }
                 },
@@ -368,7 +346,7 @@ fun AddTaskScreen(
                 modifier = Modifier.width(120.dp)
             ) {
                 Text(
-                    text = if (initialTask == null) "Dodaj" else "Zapisz",
+                    text = if (taskToEdit == null) "Dodaj" else "Zapisz",
                     color = Color.White
                 )
             }

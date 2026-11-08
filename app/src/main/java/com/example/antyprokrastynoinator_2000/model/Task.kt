@@ -9,5 +9,6 @@ data class Task(
     val miniTasks: List<MiniTask>,
     val start: LocalDateTime,
     val end: LocalDateTime,
-    val priority: Priority
+    val priority: Priority,
+    val isDone: Boolean = false
 )
