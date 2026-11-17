@@ -1,6 +1,7 @@
 package com.example.antyprokrastynoinator_2000.viewmodel
 
 import androidx.lifecycle.ViewModel
+import com.example.antyprokrastynoinator_2000.data.TaskRepository
 import com.example.antyprokrastynoinator_2000.model.Task
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -8,7 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class CalendarViewModel : ViewModel() {
 
-    private val _taskList = MutableStateFlow<List<Task>>(emptyList())
+    private val _taskList: MutableStateFlow<List<Task>> = TaskRepository.tasks
     val taskList: StateFlow<List<Task>> = _taskList.asStateFlow()
 
     // Sprawdza, czy zadanie koliduje z innymi zadaniami.
@@ -26,7 +27,7 @@ class CalendarViewModel : ViewModel() {
             return false
         }
 
-        _taskList.value = _taskList.value + newTask
+        _taskList.value += newTask
         return true
     }
 
