@@ -1,5 +1,6 @@
 package com.example.antyprokrastynoinator_2000.ui.calendar
 
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,7 +21,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.antyprokrastynoinator_2000.model.PlacedTask
@@ -30,6 +30,13 @@ import com.example.antyprokrastynoinator_2000.utils.occursOn
 import com.example.antyprokrastynoinator_2000.utils.startMinuteOn
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalDensity
+import java.time.LocalTime
+import com.example.antyprokrastynoinator_2000.utils.assignTaskColumns
+import androidx.compose.ui.zIndex
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick: (Task) -> Unit) {
@@ -37,6 +44,16 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
     val hourHeight = 60.dp
 
     var currentDate by remember { mutableStateOf(LocalDate.now()) }
+    var currentTime by remember { mutableStateOf(LocalTime.now()) }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            currentTime = LocalTime.now()
+            delay(60_000.milliseconds)
+        }
+    }
+    val listState = rememberLazyListState()
+    val density = LocalDensity.current
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Box(
@@ -55,9 +72,9 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
         fun updateCurrentDate(inPlus: Boolean)
         {
             currentDate = if(inPlus) {
-                currentDate.plusDays(1);
+                currentDate.plusDays(1)
             } else{
-                currentDate.minusDays(1);
+                currentDate.minusDays(1)
             }
         }
 
@@ -75,14 +92,21 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
                 )
             }
 
-            Text(
-                text = "Godziny",
-                color = Color.White,
-                modifier = Modifier.weight(1f).padding(5.dp),
-                textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Bold,
-                fontSize = TextUnit.Unspecified
-            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(6.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Godziny",
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    maxLines = 1
+                )
+            }
 
             val dateFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
@@ -104,54 +128,43 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
         }
 
         val sortedTasks = taskList.filter { it.occursOn(currentDate) }.map { task ->
-            val startMin = task.startMinuteOn(currentDate) - startHour * 60
+            val startMin = task.startMinuteOn(currentDate) - startHour
             val duration = task.endMinuteOn(currentDate) - task.startMinuteOn(currentDate)
             PlacedTask(task, startMin, duration)
         }.sortedWith(compareBy({ it.startMin }, { -(it.startMin + it.durationMin) }))
 
-        val clusters = mutableListOf<List<PlacedTask>>()
-        var currentCluster = mutableListOf<PlacedTask>()
-        var clusterEnd = -1
-
-        sortedTasks.forEach { pt ->
-            if (currentCluster.isEmpty()) {
-                currentCluster.add(pt)
-                clusterEnd = pt.startMin + pt.durationMin
-            } else {
-                if (pt.startMin < clusterEnd) {
-                    currentCluster.add(pt)
-                    clusterEnd = maxOf(clusterEnd, pt.startMin + pt.durationMin)
+        LaunchedEffect(currentDate, sortedTasks) {
+            if (sortedTasks.isNotEmpty()) {
+                val currentMinute = if (currentDate == LocalDate.now()) {
+                    LocalTime.now().hour * 60 + LocalTime.now().minute
                 } else {
-                    clusters.add(currentCluster)
-                    currentCluster = mutableListOf(pt)
-                    clusterEnd = pt.startMin + pt.durationMin
+                    0
                 }
+
+                // Pierwsze zadanie, które jeszcze się nie zakończyło
+                val nextTask = sortedTasks.firstOrNull {
+                    it.startMin + it.durationMin > currentMinute
+                }
+
+                val targetMinute = nextTask?.startMin ?: 0
+
+                val scrollOffset = with(density) {
+                    targetMinute.coerceAtLeast(0).dp.roundToPx()
+                }
+
+                listState.animateScrollToItem(
+                    index = 0,
+                    scrollOffset = scrollOffset
+                )
             }
         }
-        if (currentCluster.isNotEmpty()) clusters.add(currentCluster)
 
-        clusters.forEach { cluster ->
-            val columns = mutableListOf<MutableList<PlacedTask>>()
-            cluster.forEach { pt ->
-                var placed = false
-                for (i in columns.indices) {
-                    if (columns[i].last().startMin + columns[i].last().durationMin <= pt.startMin) {
-                        columns[i].add(pt)
-                        pt.column = i
-                        placed = true
-                        break
-                    }
-                }
-                if (!placed) {
-                    columns.add(mutableListOf(pt))
-                    pt.column = columns.size - 1
-                }
-            }
-            val columnCount = columns.size
-            cluster.forEach { it.totalColumns = columnCount }
-        }
+        val tasksWithColumns = assignTaskColumns(sortedTasks)
 
-        LazyColumn(modifier = Modifier.weight(1f)) {
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            state = listState
+        ) {
             item {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     Column {
@@ -189,7 +202,7 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
                         Spacer(modifier = Modifier.weight(1f))
 
                         BoxWithConstraints(modifier = Modifier.weight(3f)) {
-                            sortedTasks.forEach { pt ->
+                            tasksWithColumns.forEach { pt ->
                                 if (pt.startMin >= 0 && pt.durationMin > 0) {
                                     val blockWidth = maxWidth / pt.totalColumns
                                     val offsetX = blockWidth * pt.column
@@ -224,6 +237,29 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
                                         }
                                     }
                                 }
+                            }
+                        }
+                    }
+                    if (currentDate == LocalDate.now()) {
+                        val currentMinute = currentTime.hour * 60 + currentTime.minute
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 95.dp)
+                                .offset(y = (currentMinute.dp - 9.dp))
+                                .zIndex(1f)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(2.dp)
+                                        .background(Color.Red)
+                                )
                             }
                         }
                     }
