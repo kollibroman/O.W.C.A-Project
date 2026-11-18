@@ -2,6 +2,7 @@ package com.example.antyprokrastynoinator_2000.viewmodel
 
 import androidx.compose.runtime.simulateHotReload
 import androidx.lifecycle.ViewModel
+import com.example.antyprokrastynoinator_2000.data.TaskRepository
 import com.example.antyprokrastynoinator_2000.model.Task
 import com.example.antyprokrastynoinator_2000.Database
 import com.example.antyprokrastynoinator_2000.model.Priority
@@ -11,7 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 class CalendarViewModel(private val database: Database) : ViewModel() {
 
-    private val _taskList = MutableStateFlow<List<Task>>(emptyList())
+    private val _taskList: MutableStateFlow<List<Task>> = TaskRepository.tasks
     val taskList: StateFlow<List<Task>> = _taskList.asStateFlow()
 
     private val _priorityList = MutableStateFlow<List<Priority>>(emptyList())

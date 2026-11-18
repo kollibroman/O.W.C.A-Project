@@ -1,10 +1,19 @@
 package com.example.antyprokrastynoinator_2000
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import com.example.antyprokrastynoinator_2000.data.TaskRepository
+import com.example.antyprokrastynoinator_2000.monitor.AppMonitorService
+import com.example.antyprokrastynoinator_2000.monitor.MonitorPermissions
+import com.example.antyprokrastynoinator_2000.ui.monitor.MonitoringPermissionsCard
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,6 +41,13 @@ class CalendarViewModelFactory(private val db: Database) : ViewModelProvider.Fac
 }
 
 class MainActivity : ComponentActivity() {
+    private var permissionRefresh by mutableIntStateOf(0)
+
+    override fun onResume() {
+        super.onResume()
+        permissionRefresh++
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,14 +71,53 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize().systemBarsPadding(),
                     color = Color.DarkGray
                 ) {
-                    MainScreenCalendar(
-                        taskList = taskList,
-                        onAddClick = {
-                            editingTask = null
-                            showAddSheet = true
-                        },
-                        onTaskClick = { task -> selectedTask = task }
-                    )
+                    val hasUsageAccess = remember(permissionRefresh) {
+                        MonitorPermissions.hasUsageAccess(context)
+                    }
+                    val canDrawOverlays = remember(permissionRefresh) {
+                        MonitorPermissions.canDrawOverlays(context)
+                    }
+                    val monitoringReady = hasUsageAccess && canDrawOverlays
+
+                    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                        ActivityResultContracts.RequestPermission()
+                    ) { }
+                    LaunchedEffect(Unit) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                            !MonitorPermissions.hasNotificationPermission(context)
+                        ) {
+                            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+
+                    LaunchedEffect(taskList, monitoringReady) {
+                        if (monitoringReady && TaskRepository.hasUpcomingOrActiveTask()) {
+                            AppMonitorService.start(context)
+                        }
+                    }
+
+                    Column(modifier = Modifier.fillMaxSize()) {
+                        if (!monitoringReady) {
+                            MonitoringPermissionsCard(
+                                hasUsageAccess = hasUsageAccess,
+                                canDrawOverlays = canDrawOverlays,
+                                onGrantUsageAccess = {
+                                    context.startActivity(MonitorPermissions.usageAccessSettingsIntent())
+                                },
+                                onGrantOverlay = {
+                                    context.startActivity(MonitorPermissions.overlaySettingsIntent(context))
+                                }
+                            )
+                        }
+                        MainScreenCalendar(
+                            taskList = taskList,
+                            onAddClick = {
+                                editingTask = null
+                                showAddSheet = true
+                            },
+                            onTaskClick = { task -> selectedTask = task }
+                        )
+                    }
 
                     // BOTTOM SHEET: DODAWANIE / EDYCJA ZADANIA
                     if (showAddSheet) {
