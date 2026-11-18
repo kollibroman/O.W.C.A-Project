@@ -39,6 +39,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".TaskFormActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
         <service
             android:name=".monitor.AppMonitorService"
             android:exported="false"

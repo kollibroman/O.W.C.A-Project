@@ -15,7 +15,7 @@ class Database(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null
 
     companion object {
         private const val DATABASE_NAME = "prokrastynoinator.db"
-        private const val DATABASE_VERSION = 1
+        private const val DATABASE_VERSION = 2
     }
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -41,10 +41,10 @@ class Database(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME, null
         db.execSQL(tabPriority)
 
         val insertPriorities = """
-        INSERT INTO priority (priorityName, color, alarmOn) VALUES 
-        ('bardzo ważne', '0xFF1B4D3E', 1),
-        ('ważne', '0xFF008575', 1),
-        ('mało ważne', '0xFF26A69A', 0);
+        INSERT INTO priority (priorityName, color, alarmOn) VALUES
+        ('bardzo ważne', '0xFF8B1E3F', 1),
+        ('ważne', '0xFF1E4E79', 1),
+        ('mało ważne', '0xFF2E6F95', 0);
          """.trimIndent()
         db.execSQL(insertPriorities)
 

@@ -1,41 +1,44 @@
 package com.example.antyprokrastynoinator_2000.ui.calendar
 
-import kotlinx.coroutines.delay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.zIndex
 import com.example.antyprokrastynoinator_2000.model.PlacedTask
 import com.example.antyprokrastynoinator_2000.model.Task
+import com.example.antyprokrastynoinator_2000.ui.theme.ErrorRed
+import com.example.antyprokrastynoinator_2000.ui.theme.IceBlue
+import com.example.antyprokrastynoinator_2000.ui.theme.IceBlueLight
+import com.example.antyprokrastynoinator_2000.ui.theme.NavyPrimary
+import com.example.antyprokrastynoinator_2000.utils.assignTaskColumns
 import com.example.antyprokrastynoinator_2000.utils.endMinuteOn
 import com.example.antyprokrastynoinator_2000.utils.occursOn
 import com.example.antyprokrastynoinator_2000.utils.startMinuteOn
+import kotlinx.coroutines.delay
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.platform.LocalDensity
 import java.time.LocalTime
-import com.example.antyprokrastynoinator_2000.utils.assignTaskColumns
-import androidx.compose.ui.zIndex
+import java.time.format.DateTimeFormatter
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -55,25 +58,35 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
     val listState = rememberLazyListState()
     val density = LocalDensity.current
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(IceBlue)
+            .padding(16.dp)
+    ) {
+        // NAGŁÓWEK APLIKACJI
         Box(
-            modifier = Modifier.fillMaxWidth().background(Color(0xFF008575)).padding(16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(NavyPrimary)
+                .padding(14.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = "Prokrastynoinator2000",
-                color = Color.White,
+                color = IceBlue,
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
 
-        fun updateCurrentDate(inPlus: Boolean)
-        {
-            currentDate = if(inPlus) {
+        Spacer(modifier = Modifier.height(12.dp))
+
+        fun updateCurrentDate(inPlus: Boolean) {
+            currentDate = if (inPlus) {
                 currentDate.plusDays(1)
-            } else{
+            } else {
                 currentDate.minusDays(1)
             }
         }
@@ -83,11 +96,19 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
             onDateSelected = { currentDate = it }
         )
 
-        Row(modifier = Modifier.fillMaxWidth().background(Color(0xFF008575))) {
-            IconButton(onClick = { updateCurrentDate(false) }){
+        HorizontalDivider(thickness = 1.dp, color = IceBlue.copy(alpha = 0.25f))
+
+        // PASEK WYBRANEGO DNIA
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(NavyPrimary),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { updateCurrentDate(false) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    tint = Color.White,
+                    tint = IceBlue,
                     contentDescription = "Poprzedni dzień"
                 )
             }
@@ -100,10 +121,10 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
             ) {
                 Text(
                     text = "Godziny",
-                    color = Color.White,
+                    color = IceBlue,
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     maxLines = 1
                 )
             }
@@ -112,16 +133,19 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
 
             Text(
                 text = currentDate.format(dateFormat),
-                color = Color.White,
-                modifier = Modifier.weight(3f).padding(8.dp),
+                color = IceBlue,
+                modifier = Modifier
+                    .weight(3f)
+                    .padding(8.dp),
                 textAlign = TextAlign.Center,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp
             )
 
-            IconButton(onClick = { updateCurrentDate(true) }){
+            IconButton(onClick = { updateCurrentDate(true) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    tint = Color.White,
+                    tint = IceBlue,
                     contentDescription = "Następny dzień"
                 )
             }
@@ -141,7 +165,6 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
                     0
                 }
 
-                // Pierwsze zadanie, które jeszcze się nie zakończyło
                 val nextTask = sortedTasks.firstOrNull {
                     it.startMin + it.durationMin > currentMinute
                 }
@@ -160,9 +183,19 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
         }
 
         val tasksWithColumns = assignTaskColumns(sortedTasks)
+        val gridLineColor = NavyPrimary.copy(alpha = 0.22f)
 
+        // SIATKA KALENDARZA
         LazyColumn(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
+                .background(IceBlueLight)
+                .border(
+                    width = 1.dp,
+                    color = NavyPrimary.copy(alpha = 0.35f),
+                    shape = RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp)
+                ),
             state = listState
         ) {
             item {
@@ -178,21 +211,22 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
                                     modifier = Modifier
                                         .weight(1f)
                                         .fillMaxHeight()
-                                        .border(0.5.dp, Color.White)
+                                        .border(0.5.dp, gridLineColor)
                                         .padding(5.dp),
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = String.format("%02d:00", hour),
                                         fontSize = 14.sp,
-                                        color = Color.White
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = NavyPrimary
                                     )
                                 }
                                 Box(
                                     modifier = Modifier
                                         .weight(3f)
                                         .fillMaxHeight()
-                                        .border(0.5.dp, Color.White)
+                                        .border(0.5.dp, gridLineColor)
                                 )
                             }
                         }
@@ -228,7 +262,7 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
                                             if (pt.task.description.isNotEmpty()) {
                                                 Text(
                                                     text = pt.task.description,
-                                                    color = Color.LightGray,
+                                                    color = IceBlueLight,
                                                     fontSize = 10.sp,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
@@ -240,25 +274,33 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
                             }
                         }
                     }
+
                     if (currentDate == LocalDate.now()) {
                         val currentMinute = currentTime.hour * 60 + currentTime.minute
 
-                        Box(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(start = 95.dp)
-                                .offset(y = (currentMinute.dp - 9.dp))
-                                .zIndex(1f)
+                                .offset(y = (currentMinute.dp - 4.dp))
+                                .zIndex(1f),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Spacer(modifier = Modifier.weight(1f))
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.weight(3f),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Box(
                                     modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(ErrorRed)
+                                )
+                                Box(
+                                    modifier = Modifier
                                         .weight(1f)
                                         .height(2.dp)
-                                        .background(Color.Red)
+                                        .background(ErrorRed)
                                 )
                             }
                         }
@@ -267,13 +309,33 @@ fun MainScreenCalendar(taskList: List<Task>, onAddClick: () -> Unit, onTaskClick
             }
         }
 
-        Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+        // PRZYCISK DODAJ
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+            contentAlignment = Alignment.CenterEnd
+        ) {
             Button(
                 onClick = onAddClick,
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF008575)),
-                modifier = Modifier.padding(top = 8.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = NavyPrimary,
+                    contentColor = IceBlue
+                ),
+                contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp)
             ) {
-                Text("Dodaj", color = Color.White)
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Dodaj",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }

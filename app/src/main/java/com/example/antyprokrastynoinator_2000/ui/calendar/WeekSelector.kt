@@ -32,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.antyprokrastynoinator_2000.ui.theme.IceBlue
+import com.example.antyprokrastynoinator_2000.ui.theme.NavyPrimary
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -39,17 +41,11 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 
-private val WeekSelectorBackground = Color(0xFF008575)
+private val WeekSelectorBackground = NavyPrimary
 private val DayNames = listOf("Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd")
 private val ShortWeekFormat = DateTimeFormatter.ofPattern("dd.MM")
 private val FullWeekFormat = DateTimeFormatter.ofPattern("dd.MM.yyyy")
 
-/**
- * Panel wyboru tygodnia: strzałki do przełączania tygodni, nagłówek otwierający
- * dialog z kalendarzem oraz pasek dni Pn–Nd.
- *
- * Komponent jest bezstanowy względem daty: wybraną datę trzyma wywołujący.
- */
 @Composable
 fun WeekSelector(
     selectedDate: LocalDate,
@@ -72,7 +68,12 @@ fun WeekSelector(
         )
     }
 
-    Column(modifier = modifier.fillMaxWidth().background(WeekSelectorBackground)) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+            .background(WeekSelectorBackground)
+    ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -80,14 +81,14 @@ fun WeekSelector(
             IconButton(onClick = { onDateSelected(selectedDate.minusWeeks(1)) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    tint = Color.White,
+                    tint = IceBlue,
                     contentDescription = "Poprzedni tydzień"
                 )
             }
 
             Text(
                 text = "Tydzień: ${weekStart.format(ShortWeekFormat)} – ${weekEnd.format(FullWeekFormat)}",
-                color = Color.White,
+                color = IceBlue,
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(8.dp))
@@ -100,7 +101,7 @@ fun WeekSelector(
             IconButton(onClick = { onDateSelected(selectedDate.plusWeeks(1)) }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    tint = Color.White,
+                    tint = IceBlue,
                     contentDescription = "Następny tydzień"
                 )
             }
@@ -131,16 +132,16 @@ private fun WeekDaysRow(
         for (i in 0..6) {
             val day = weekStart.plusDays(i.toLong())
             val isSelected = day == selectedDate
-            val textColor = if (isSelected) WeekSelectorBackground else Color.White
+            val textColor = if (isSelected) NavyPrimary else IceBlue
 
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .padding(2.dp)
                     .clip(dayShape)
-                    .background(if (isSelected) Color.White else Color.Transparent)
+                    .background(if (isSelected) IceBlue else Color.Transparent)
                     .then(
-                        if (day == today && !isSelected) Modifier.border(1.dp, Color.White, dayShape)
+                        if (day == today && !isSelected) Modifier.border(1.dp, IceBlue, dayShape)
                         else Modifier
                     )
                     .clickable { onDayClick(day) }
@@ -159,13 +160,13 @@ private fun WeekDaysRow(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun WeekPickerDialog(
     initialDate: LocalDate,
     onConfirm: (LocalDate) -> Unit,
     onDismiss: () -> Unit
 ) {
-    // DatePicker operuje na milisekundach UTC, więc konwersja musi iść przez UTC
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = initialDate
             .atStartOfDay(ZoneOffset.UTC)
@@ -184,12 +185,12 @@ private fun WeekPickerDialog(
                     onDismiss()
                 }
             }) {
-                Text("Wybierz")
+                Text("Wybierz", color = NavyPrimary, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Anuluj")
+                Text("Anuluj", color = NavyPrimary)
             }
         }
     ) {
